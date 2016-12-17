@@ -14,7 +14,7 @@ setup(
     version='0.1.0',
     description='API Blueprint from python docstring',
     long_description=long_description,
-    url='https://github.com/HackerWilson/python-api-blueprint.git',
+    url='https://github.com/HackerWilson/pyabp.git',
     author='HackerWilson',
     author_email='wenbinwb1@foxmail.com',
     license='MIT',
