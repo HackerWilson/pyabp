@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+from __future__ import unicode_literals
+import io
 import os
 import sys
 import inspect
@@ -80,7 +82,7 @@ def writedoc(module_list):
         name = module_list[0].__name__
 
     if contents.strip():
-        file = open(name + '.md', 'w')
+        file = io.open(name + '.md', 'w', encoding='utf8')
         file.write(metadata_format)
         file.write(metadata_host)
         file.write(contents)
@@ -126,13 +128,18 @@ def writedocs(dir_path):
 
 
 def cli():
+    script_dir = os.path.dirname(sys.argv[0])
+    if script_dir in sys.path:
+        sys.path.remove(script_dir)
+    sys.path.insert(0, '.')
+
     parser = argparse.ArgumentParser(
         description='API Blueprint from python docstring.')
 
     parser.add_argument('-w', '--write', dest='name', nargs='*',
                         help='''Write out the API Blueprint documentation
                         for a module to a file in the current directory.
-                        If <name> contains a '/',
+                        If <name> contains a '{sep}',
                         it is treated as a filename;
                         if it names a directory,
                         documentation is written for all the contents.''')
@@ -143,15 +150,18 @@ def cli():
         global metadata_host
         metadata_host = "HOST: %s" % args.host + os.linesep
     for arg in args.name:
-        if os.path.isfile(arg):
-            sys.path.insert(0, os.path.dirname(arg))
+        if pydoc.ispath(arg) and os.path.isfile(arg):
             obj = pydoc.importfile(arg)
             module, name = pydoc.resolve(obj)
             module_list = [module]
             writedoc(module_list)
-        elif os.path.isdir(arg):
+        elif pydoc.ispath(arg) and os.path.isdir(arg):
             sys.path.insert(0, arg)
             writedocs(arg)
+        else:
+            module, name = pydoc.resolve(arg)
+            module_list = [module]
+            writedoc(module_list)
 
 
 if __name__ == '__main__':

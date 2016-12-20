@@ -11,7 +11,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='pyabp',
-    version='0.1.0',
+    version='0.1.1',
     description='API Blueprint from python docstring',
     long_description=long_description,
     url='https://github.com/HackerWilson/pyabp.git',
