@@ -143,7 +143,8 @@ def cli():
                         it is treated as a filename;
                         if it names a directory,
                         documentation is written for all the contents.''')
-    parser.add_argument('--host', dest='host', help='Your host server address.')
+    parser.add_argument('--host', dest='host',
+                        help='Your host server address.')
 
     args = parser.parse_args()
     if args.host:
