@@ -21,21 +21,21 @@ class TextDoc(object):
 
     def analyze_module(self, obj):
         try:
-            all = obj.__all__
+            _all = obj.__all__
         except AttributeError:
-            all = None
+            _all = None
 
         classes = []
         for key, value in inspect.getmembers(obj, inspect.isclass):
-            if (all is not None or (inspect.getmodule(value) or obj) is obj):
-                if pydoc.visiblename(key, all, obj):
+            if (_all is not None or (inspect.getmodule(value) or obj) is obj):
+                if pydoc.visiblename(key, _all, obj):
                     classes.append(value)
 
         funcs = []
         for key, value in inspect.getmembers(obj, inspect.isroutine):
-            if (all is not None or inspect.isbuiltin(value) or
+            if (_all is not None or inspect.isbuiltin(value) or
                     inspect.getmodule(value) is obj):
-                if pydoc.visiblename(key, all, obj):
+                if pydoc.visiblename(key, _all, obj):
                     funcs.append(value)
         return classes, funcs
 
@@ -55,7 +55,7 @@ class TextDoc(object):
                 if doc and doc.startswith('Group'):
                     full_doc = doc.splitlines()
                     group_head_doc = get_group_head(full_doc[0])
-                    group_head_doc = ' '.join(["#", group_head_doc])
+                    group_head_doc = ' '.join(['#', group_head_doc])
                     for line in full_doc[1:]:
                         group_doc = os.linesep.join([group_doc, line])
                 else:
@@ -117,10 +117,18 @@ def get_group_head(doc):
     return doc
 
 
+def resolve(obj):
+    try:
+        module, name = pydoc.resolve(obj)
+        return module, name
+    except (ImportError, pydoc.ErrorDuringImport):
+        raise
+
+
 def writedocs(dir_path):
     all_modules = []
     for module_loader, module_name, ispkg in pkgutil.walk_packages([dir_path]):
-        module, name = pydoc.resolve(module_name)
+        module, name = resolve(module_name)
         all_modules.append(module)
 
     for k, v in group_obj(all_modules).items():
@@ -128,10 +136,11 @@ def writedocs(dir_path):
 
 
 def cli():
-    script_dir = os.path.dirname(sys.argv[0])
-    if script_dir in sys.path:
-        sys.path.remove(script_dir)
-    sys.path.insert(0, '.')
+    if '' not in sys.path:
+        script_dir = os.path.dirname(sys.argv[0])
+        if script_dir in sys.path:
+            sys.path.remove(script_dir)
+        sys.path.insert(0, '.')
 
     parser = argparse.ArgumentParser(
         description='API Blueprint from python docstring.')
@@ -149,18 +158,22 @@ def cli():
     args = parser.parse_args()
     if args.host:
         global metadata_host
-        metadata_host = "HOST: %s" % args.host + os.linesep
+        metadata_host = 'HOST: %s' % args.host + os.linesep
     for arg in args.name:
-        if pydoc.ispath(arg) and os.path.isfile(arg):
-            obj = pydoc.importfile(arg)
-            module, name = pydoc.resolve(obj)
-            module_list = [module]
-            writedoc(module_list)
-        elif pydoc.ispath(arg) and os.path.isdir(arg):
-            sys.path.insert(0, arg)
-            writedocs(arg)
+        if pydoc.ispath(arg) and not os.path.exists(arg):
+            print('path %r does not exist.' % arg)
+            break
+        if pydoc.ispath(arg):
+            if os.path.isfile(arg):
+                obj = pydoc.importfile(arg)
+                module, name = resolve(obj)
+                module_list = [module]
+                writedoc(module_list)
+            else:
+                sys.path.insert(0, arg)
+                writedocs(arg)
         else:
-            module, name = pydoc.resolve(arg)
+            module, name = resolve(arg)
             module_list = [module]
             writedoc(module_list)
 
